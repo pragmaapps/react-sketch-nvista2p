@@ -147,8 +147,8 @@ class Polygon extends FabricCanvasTool {
       ) {
         this.objectAdd = true;
         this.generatePolygon(this.pointArray, props);
-        removeColorInDefaultShapeColors(props.defaultShapeColors);
-        addROIDefaultName(props.roiDefaultNames);
+        // removeColorInDefaultShapeColors(props.defaultShapeColors);
+        // addROIDefaultName(props.roiDefaultNames);
       } else {
         this.addPoint(options, props);
       }
@@ -353,10 +353,10 @@ class Polygon extends FabricCanvasTool {
       id: new Date().getTime(),
       fill: this._fill,
       strokeWidth: this._width,
-      stroke: props.defaultShapeColors[0],
+      stroke: '#ffa500',
       transparentCorners: false,
-      name: name,
-      defaultName: defaultName,
+      name: `ROI#${objects.length + 1}`,
+      defaultName: `ROI#${objects.length + 1}`,
       selectable: false,
       evented: false,
       enable: true,

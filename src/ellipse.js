@@ -66,10 +66,10 @@ class Ellipse extends FabricCanvasTool {
       rx: 20,
       ry: 20,
       strokeWidth: this._width,
-      stroke: props.defaultShapeColors[0],
+      stroke: '#ffa500',
       fill: this._fill,
-      name: name,
-      defaultName: defaultName,
+      name: `ROI#${objects.length + 1}`,
+      defaultName: `ROI#${objects.length + 1}`,
       selectable: false,
       evented: false,
       transparentCorners: false,
@@ -85,8 +85,8 @@ class Ellipse extends FabricCanvasTool {
     // this.containInsideBoundary(options);
     this.isDragging = true;
     this.ellipse.edit = true;
-    removeColorInDefaultShapeColors(props.defaultShapeColors);
-    addROIDefaultName(props.roiDefaultNames);
+    // removeColorInDefaultShapeColors(props.defaultShapeColors);
+    // addROIDefaultName(props.roiDefaultNames);
   };
 
   addEventTriggerKeys = ()=>{

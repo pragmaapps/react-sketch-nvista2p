@@ -28,7 +28,8 @@ const config = {
       {
         test: /\.(js|jsx)$/,
         include: [Paths.srcPath, Paths.examplesPath],
-        exclude: /(node_modules|bower_components|lib)/,
+        // Avoid excluding project paths like "libs/..."; only skip true lib directories.
+        exclude: /(node_modules|bower_components|[\\/]lib[\\/])/,
         loaders: ['babel-loader']
       }
     ]

@@ -66,12 +66,12 @@ class Rectangle extends FabricCanvasTool {
       originY: "top",
       width: 20,
       height: 20,
-      stroke: props.defaultShapeColors[0],
+      stroke: '#ffa500',
       strokeWidth: this._width,
       fill: this._fill,
       transparentCorners: false,
-      name: name,
-      defaultName: defaultName,
+      name:  `ROI#${objects.length + 1}`,
+      defaultName: `ROI#${objects.length + 1}`,
       selectable: false,
       evented: false,
       id: new Date().getTime(),
@@ -88,8 +88,8 @@ class Rectangle extends FabricCanvasTool {
     // this.containInsideBoundary(options);
     this.isDragging = true;
     this.rect.edit = true;
-    removeColorInDefaultShapeColors(props.defaultShapeColors);
-    addROIDefaultName(props.roiDefaultNames);
+    // removeColorInDefaultShapeColors(props.defaultShapeColors);
+    // addROIDefaultName(props.roiDefaultNames);
   };
   addEventTriggerKeys = ()=>{
     this.rect.triggerEvent= "none";
@@ -180,8 +180,8 @@ class Rectangle extends FabricCanvasTool {
         shape.top < boundaryObj.top ||
         shape.left + (shape.width * shape.scaleX) > boundaryObj.left + (boundaryObj.width * boundaryObj.scaleX) ||
         shape.top + (shape.height * shape.scaleY) > boundaryObj.top + (boundaryObj.height * boundaryObj.scaleY)) && shape.id !== "trackingArea"){
-          props.addColorInDefaultShapeColors(shape.stroke);
-          props.deleteROIDefaultName(shape.defaultName);
+          // props.addColorInDefaultShapeColors(shape.stroke);
+          // props.deleteROIDefaultName(shape.defaultName);
           canvas.remove(shape);
           isObjectOutSideBoundary = true;
         }

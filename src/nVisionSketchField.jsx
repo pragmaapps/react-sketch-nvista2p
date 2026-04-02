@@ -249,6 +249,8 @@ class NvisionSketchField extends PureComponent {
 
   _fc = null
   childRef = React.createRef();
+  _forcedOverlayWidth = null
+  _forcedOverlayHeight = null
   left1 = 0;
   top1 = 0 ;
   scale1x = 0 ;    
@@ -733,8 +735,8 @@ class NvisionSketchField extends PureComponent {
         });
         if(isOutsideBoundary){
           showNotification = true;
-          this.props.addColorInDefaultShapeColors(shape.stroke);
-          this.props.deleteROIDefaultName(shape.defaultName);
+          // this.props.addColorInDefaultShapeColors(shape.stroke);
+          // this.props.deleteROIDefaultName(shape.defaultName);
           canvas.remove(shape);
         }
       }
@@ -915,23 +917,31 @@ class NvisionSketchField extends PureComponent {
 
   getOverlayDimensions  = () => {
     let canvas = this._fc;
+    let overlayWidth = 0;
+    let overlayHeight = 0;
+
+    // Match Camera1_stream original behavior: width from onep container, height from video-container-3.
     if (canvas && canvas.upperCanvasEl) {
-      var overlayWidth = document.getElementById("onep-twop-container-2").offsetWidth;
+      const el = document.getElementById("onep-twop-container-2");
+      overlayWidth = el ? el.offsetWidth : 0;
+    } else {
+      const el = document.getElementById("oneptwop-container");
+      overlayWidth = el ? el.offsetWidth : 0;
     }
-    else {
-      var overlayWidth = document.getElementById("oneptwop-container").offsetWidth;
-    }
+
     let resolutionRatio = this.props.resolutionWidth / this.props.resolutionHeight;
-    if(this.props.resolutionHeight === 1080 && this.props.resolutionWidth === 1920){
-      var overlayHeight = Math.ceil(this.props.resolutionHeight / (this.props.resolutionWidth / overlayWidth));
-    }else{
-      //var overlayHeight = Math.ceil(document.getElementById("video-container-3").offsetHeight);
-      //var overlayWidth = overlayHeight * resolutionRatio;
-      var overlayHeight = document.getElementById("video-container-3").offsetHeight;
-      var overlayWidth = Math.ceil(this.props.resolutionWidth / (this.props.resolutionHeight / overlayHeight));
+    if (this.props.resolutionHeight === 1080 && this.props.resolutionWidth === 1920) {
+      overlayHeight = Math.ceil(this.props.resolutionHeight / (this.props.resolutionWidth / (overlayWidth || 1)));
+    } else {
+      const vc3 = document.getElementById("video-container-3");
+      overlayHeight = vc3 ? vc3.offsetHeight : 0;
+      if (overlayHeight) {
+        overlayWidth = Math.ceil(this.props.resolutionWidth / (this.props.resolutionHeight / overlayHeight));
+      }
     }
+
     console.log('[Tracking Setting][Tracking Area] Canvas Overlay Width:', overlayWidth, overlayHeight);
-    return { overlayWidth: overlayWidth,overlayHeight: overlayHeight }
+    return { overlayWidth: overlayWidth, overlayHeight: overlayHeight };
   }
 
   _resize = (e, canvasWidth = null, canvasHeight = null) => {
@@ -1037,8 +1047,10 @@ class NvisionSketchField extends PureComponent {
       canvas.discardActiveObject();
       // canvas.setWidth(cWidth * cnwidthMultiplier);
       // canvas.setHeight(cHeight * cnHeightMultiplier);
-      this.props.trackingCanvasHeight(cHeight);
-      this.props.trackingCanvasWidth( cWidth);
+      const setCanvasHeight = this.getCanvasHeightUpdater();
+      const setCanvasWidth = this.getCanvasWidthUpdater();
+      setCanvasHeight(cHeight);
+      setCanvasWidth(cWidth);
       canvas.renderAll();
       // canvas.calcOffset();
       // this.props.onShapeAdded();
@@ -1104,8 +1116,10 @@ class NvisionSketchField extends PureComponent {
       //let refactorCanvasWidth = Math.ceil(cWidth * scaleMultiplier) + 1;
       canvas.setWidth(cWidth * scaleMultiplier);
       canvas.setHeight(cHeight * scaleHeightMultiplier);
-      this.props.trackingCanvasHeight(cHeight * scaleHeightMultiplier);
-      this.props.trackingCanvasWidth( cWidth * scaleMultiplier);
+      const setCanvasHeight = this.getCanvasHeightUpdater();
+      const setCanvasWidth = this.getCanvasWidthUpdater();
+      setCanvasHeight(cHeight * scaleHeightMultiplier);
+      setCanvasWidth(cWidth * scaleMultiplier);
       /*canvas.setWidth(Math.ceil(canvas.getWidth() * scaleMultiplier));
       canvas.setHeight(Math.ceil(canvas.getHeight() * scaleHeightMultiplier));
       this.props.trackingCanvasHeight(Math.ceil(canvas.getHeight() * scaleHeightMultiplier));
@@ -1163,11 +1177,17 @@ class NvisionSketchField extends PureComponent {
       canvas.discardActiveObject();
       canvas.setWidth(cWidth * scaleMultiplier);
       canvas.setHeight(cHeight * scaleHeightMultiplier);
-      this.props.trackingCanvasHeight(cHeight * scaleHeightMultiplier);
-      this.props.trackingCanvasWidth( cWidth * scaleMultiplier);
+      const setCanvasHeight = this.getCanvasHeightUpdater();
+      const setCanvasWidth = this.getCanvasWidthUpdater();
+      setCanvasHeight(cHeight * scaleHeightMultiplier);
+      setCanvasWidth(cWidth * scaleMultiplier);
       canvas.renderAll();
       canvas.calcOffset();
       this.setState({canvasHeight:canvas.height,canvasWidth:canvas.width, scaleHeightMultiplier, scaleMultiplier},()=>{
+        if (this.props.onShapeAdded) {
+          // Keep external state (e.g. redux) in sync after resize scaling.
+          this.props.onShapeAdded(false);
+        }
               });
     }
   }
@@ -1250,8 +1270,9 @@ class NvisionSketchField extends PureComponent {
     return obj;
   }*/
   updateObjectsInReduxAnimalTrackingKey = (scaleMultiplier, scaleHeightMultiplier,cWidth, cHeight, updateCanvasDimensions = false ) => {
+    if (this.isRoiMode()) return;
     let scaleMultiplierForObjects = scaleMultiplier;
-    let trackingArea = this.scaleObject(JSON.parse(JSON.stringify(this.props.trackingArea)), scaleMultiplierForObjects, scaleHeightMultiplier,cWidth, cHeight, updateCanvasDimensions);
+    let trackingArea = this.scaleObject(JSON.parse(JSON.stringify(this.getRoiArea())), scaleMultiplierForObjects, scaleHeightMultiplier,cWidth, cHeight, updateCanvasDimensions);
     this.props.saveDimesions(trackingArea);
     let lineShape = [];
     if(this.props.lineShape.length){
@@ -1267,14 +1288,22 @@ class NvisionSketchField extends PureComponent {
   }
 
   updateObjectsInRedux = (scaleMultiplier, scaleHeightMultiplier,cWidth, cHeight, updateCanvasDimensions = false) => {
-    const { selectedCameraForTracking } = this.props;
+    if (this.isRoiMode()) return;
+    const selectedCameraForTracking = this.getRoiContextKey();
     let nVisionSession = JSON.parse(JSON.stringify(this.props.nVisionSession));
-    let trackingInterface = nVisionSession.userInterface.trackingInterface;
-    let trackingArea = JSON.parse(JSON.stringify(trackingInterface[selectedCameraForTracking].trackingArea));
-    console.log("[tracking settings][Sketch Field][updateObjectsInRedux][scaling objects][object details before scaling]: ", trackingArea);
-    let lineShape = JSON.parse(JSON.stringify(trackingInterface[selectedCameraForTracking].calibrateArena.geometry.coordinates));
-    let arenaZoneShapesList = JSON.parse(JSON.stringify(trackingInterface[selectedCameraForTracking].arenaZone.zoneList));
-    trackingArea.geometry.coordinates = this.scaleObject(trackingArea.geometry.coordinates,scaleMultiplier,scaleHeightMultiplier,cWidth, cHeight, updateCanvasDimensions);
+    const sessionUI = nVisionSession.userInterface || {};
+    const roiInterface = sessionUI.roiInterface || null;
+    const trackingInterface = sessionUI.trackingInterface || null;
+    const selectedContext =
+      (roiInterface && roiInterface[selectedCameraForTracking]) ||
+      (trackingInterface && trackingInterface[selectedCameraForTracking]) ||
+      {};
+    const areaKey = selectedContext.roiArea ? "roiArea" : "trackingArea";
+    let areaObject = JSON.parse(JSON.stringify(selectedContext[areaKey] || { geometry: { coordinates: {} } }));
+    console.log("[ROI Settings][Sketch Field][updateObjectsInRedux][scaling objects][object details before scaling]: ", areaObject);
+    let lineShape = JSON.parse(JSON.stringify((selectedContext.calibrateArena && selectedContext.calibrateArena.geometry && selectedContext.calibrateArena.geometry.coordinates) || []));
+    let arenaZoneShapesList = JSON.parse(JSON.stringify((selectedContext.arenaZone && selectedContext.arenaZone.zoneList) || []));
+    areaObject.geometry.coordinates = this.scaleObject(areaObject.geometry.coordinates,scaleMultiplier,scaleHeightMultiplier,cWidth, cHeight, updateCanvasDimensions);
     if(lineShape.length){
       lineShape[0] = this.scaleObject(lineShape[0], scaleMultiplier, scaleHeightMultiplier,cWidth, cHeight, updateCanvasDimensions);
     }
@@ -1283,10 +1312,19 @@ class NvisionSketchField extends PureComponent {
       let scaledObject = JSON.parse(JSON.stringify(this.scaleObject(zone, scaleMultiplier,scaleHeightMultiplier,cWidth, cHeight, updateCanvasDimensions)));
       zones.push(scaledObject);
     })
-    console.log("[Tracking Settings][Sketch Field][updateObjectsInRedux][scaling objects]: Objects details after rescaling: ", arenaZoneShapesList );
-    nVisionSession.userInterface.trackingInterface[selectedCameraForTracking].trackingArea = trackingArea;
-    nVisionSession.userInterface.trackingInterface[selectedCameraForTracking].calibrateArena.geometry.coordinates = lineShape;
-    nVisionSession.userInterface.trackingInterface[selectedCameraForTracking].arenaZone.zoneList = zones;
+    console.log("[ROI Settings][Sketch Field][updateObjectsInRedux][scaling objects]: Objects details after rescaling: ", arenaZoneShapesList );
+    // ROI mode
+    if (nVisionSession.userInterface.roiInterface && nVisionSession.userInterface.roiInterface[selectedCameraForTracking]) {
+      nVisionSession.userInterface.roiInterface[selectedCameraForTracking].roiArea = areaObject;
+      nVisionSession.userInterface.roiInterface[selectedCameraForTracking].calibrateArena.geometry.coordinates = lineShape;
+      nVisionSession.userInterface.roiInterface[selectedCameraForTracking].arenaZone.zoneList = zones;
+    }
+    // Backward compatible tracking mode
+    if (nVisionSession.userInterface.trackingInterface && nVisionSession.userInterface.trackingInterface[selectedCameraForTracking]) {
+      nVisionSession.userInterface.trackingInterface[selectedCameraForTracking].trackingArea = areaObject;
+      nVisionSession.userInterface.trackingInterface[selectedCameraForTracking].calibrateArena.geometry.coordinates = lineShape;
+      nVisionSession.userInterface.trackingInterface[selectedCameraForTracking].arenaZone.zoneList = zones;
+    }
     this.props.updateNvisionSession(nVisionSession);
   }
 
@@ -1310,13 +1348,22 @@ class NvisionSketchField extends PureComponent {
     console.log("[Tracking Settings][Sketch Field][getCanvasAtComponentMount][component mount] Resize Canvas Dimensions to: ", cHeight * scaleHeightMultiplier, cWidth * scaleMultiplier);
     canvas.setWidth(cWidth * scaleMultiplier);
     canvas.setHeight(cHeight * scaleHeightMultiplier);
-    this.props.trackingCanvasHeight(cHeight * scaleHeightMultiplier);
-    this.props.trackingCanvasWidth( cWidth * scaleMultiplier);
+    const setCanvasHeight = this.getCanvasHeightUpdater();
+    const setCanvasWidth = this.getCanvasWidthUpdater();
+    setCanvasHeight(cHeight * scaleHeightMultiplier);
+    setCanvasWidth(cWidth * scaleMultiplier);
     canvas.renderAll();
     canvas.calcOffset();
     this.setState({canvasHeight:canvas.height,canvasWidth:canvas.width},()=>{
+          if (this.props.onShapeAdded) {
+            // Sync external state after component-mount scaling.
+            this.props.onShapeAdded(false);
+          }
           });
-    this.resizeCanvas(true, false);
+    // In ROI mode we already set the canvas to the target overlay dimensions above.
+    // Calling resizeCanvas(true, false) adds `strokeWidth` again via getActualCanvasDimensions,
+    // which causes canvas (e.g. 514) while stream is (e.g. 512).
+    this.resizeCanvas(!this.isRoiMode(), false);
   }
 
   resizeCanvas = (addDimension = false, resize = true) => {
@@ -1336,15 +1383,19 @@ class NvisionSketchField extends PureComponent {
     currCanvas.setHeight(newCanvasHeight);
     currCanvas.setWidth(newCanvasWidth);
     currCanvas.requestRenderAll();
-    this.props.trackingCanvasHeight(currCanvas.getHeight());
-    this.props.trackingCanvasWidth(currCanvas.getWidth());
+    const setCanvasHeight = this.getCanvasHeightUpdater();
+    const setCanvasWidth = this.getCanvasWidthUpdater();
+    setCanvasHeight(currCanvas.getHeight());
+    setCanvasWidth(currCanvas.getWidth());
         console.log("[Tracking Settings][Sketch Field][resize Canvas][width and height of canvas after resize] :", currCanvas.getWidth(),currCanvas.getHeight());
   }
 
   setCanvasWidthHeightInRedux = () => {
     let currCanvas = this._fc;
-    this.props.trackingCanvasHeight(currCanvas.getHeight());
-    this.props.trackingCanvasWidth(currCanvas.getWidth());
+    const setCanvasHeight = this.getCanvasHeightUpdater();
+    const setCanvasWidth = this.getCanvasWidthUpdater();
+    setCanvasHeight(currCanvas.getHeight());
+    setCanvasWidth(currCanvas.getWidth());
   }
 
   bindLandmarks = (updateLandmarks = false, canvasData) => {
@@ -1377,6 +1428,16 @@ class NvisionSketchField extends PureComponent {
     obj.height = height + ( fullWidth ? this.state.strokeWidth : (this.state.strokeWidth +0) );
     return obj;
   }
+
+  getCanvasHeightUpdater = () => this.props.roiCanvasHeight || this.props.trackingCanvasHeight || (() => {});
+
+  getCanvasWidthUpdater = () => this.props.roiCanvasWidth || this.props.trackingCanvasWidth || (() => {});
+
+  getRoiArea = () => this.props.roiArea || this.props.trackingArea || {};
+
+  getRoiContextKey = () => this.props.selectedRoiContext || this.props.selectedCameraForTracking;
+
+  isRoiMode = () => !!(this.props.roiArea || this.props.selectedRoiContext || this.props.roiCanvasHeight || this.props.roiCanvasWidth);
 
   onMountUpdateObjectsInReduxAnimalTrackingKey = (scaleMultiplier, scaleHeightMultiplier,cWidth, cHeight, updateCanvasDimensions = false, trackingArea, arenaZoneShapesList, lineShape) => {
     let scaleMultiplierForObjects = scaleMultiplier;
@@ -2191,7 +2252,16 @@ class NvisionSketchField extends PureComponent {
       style ? style : {},
       width ? { width: '100%' } : { width: '100%' },
       //width ? { width: this.state.canvasWidth } : { width: this.state.canvasWidth },
-      height ? { height: this.state.canvasHeight } : { height: this.state.canvasHeight }
+      // Important: don't lock container height to internal canvasHeight.
+      // Otherwise parent panel resize won't affect overlay dimensions.
+      {
+        height:
+          height !== undefined && height !== null
+            ? typeof height === 'number'
+              ? `${height}px`
+              : height
+            : '100%'
+      }
     )
 
     return (
@@ -2202,10 +2272,11 @@ class NvisionSketchField extends PureComponent {
         id="onep-twop-container-2"
       >
         <ReactResizeDetector handleWidth handleHeight skipOnMount ={true} onResize={this.onChangeSize.bind(this)} />
-        <div style={{ position: 'absolute' }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
           <canvas
             //id={uuid4()}
             id="tracking-canvas"
+            style={{ width: '100%', height: '100%' }}
             // style={{
             // margin: "0 auto",
             // position: "absolute",
