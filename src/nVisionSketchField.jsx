@@ -785,6 +785,19 @@ class NvisionSketchField extends PureComponent {
     canvas.renderAll();
   }
 
+  clearRoiShapes = () => {
+    let canvas = this._fc;
+    if (!canvas) return;
+    let roiTypes = ["rect", "ellipse", "polygon"];
+    canvas.getObjects().forEach((shape) => {
+      if (shape && roiTypes.includes(shape.type)) {
+        canvas.remove(shape);
+      }
+    });
+    canvas.discardActiveObject();
+    canvas.renderAll();
+  }
+
   checkForMinDistance = (polygon) =>{
     const points = polygon.points;
     const minDistance = 10;
@@ -915,10 +928,33 @@ class NvisionSketchField extends PureComponent {
     ctx.restore();
   }
 
+  getContainerDimensions = () => {
+    const container = this._container;
+    if (!container) return { width: 0, height: 0 };
+    const parent = container.parentElement;
+    const widths = [container.clientWidth || 0, parent ? parent.clientWidth || 0 : 0].filter(v => v > 0);
+    const heights = [container.clientHeight || 0, parent ? parent.clientHeight || 0 : 0].filter(v => v > 0);
+    return {
+      width: widths.length ? Math.max(...widths) : 0,
+      height: heights.length ? Math.max(...heights) : 0
+    };
+  }
+
   getOverlayDimensions  = () => {
     let canvas = this._fc;
     let overlayWidth = 0;
     let overlayHeight = 0;
+    const explicitRoiWidth = this.props.roiContainerWidth || 0;
+    const explicitRoiHeight = this.props.roiContainerHeight || 0;
+    const container = this.getContainerDimensions();
+
+    // ROI mode should track the actual panel/container size.
+    if (this.isRoiMode() && explicitRoiWidth && explicitRoiHeight) {
+      return { overlayWidth: explicitRoiWidth, overlayHeight: explicitRoiHeight };
+    }
+    if (this.isRoiMode() && container.width && container.height) {
+      return { overlayWidth: container.width, overlayHeight: container.height };
+    }
 
     // Match Camera1_stream original behavior: width from onep container, height from video-container-3.
     if (canvas && canvas.upperCanvasEl) {
@@ -939,6 +975,10 @@ class NvisionSketchField extends PureComponent {
         overlayWidth = Math.ceil(this.props.resolutionWidth / (this.props.resolutionHeight / overlayHeight));
       }
     }
+
+    // Fallback for layouts where fixed IDs are absent or stale.
+    if (!overlayWidth && container.width) overlayWidth = container.width;
+    if (!overlayHeight && container.height) overlayHeight = container.height;
 
     console.log('[Tracking Setting][Tracking Area] Canvas Overlay Width:', overlayWidth, overlayHeight);
     return { overlayWidth: overlayWidth, overlayHeight: overlayHeight };
@@ -1073,7 +1113,7 @@ class NvisionSketchField extends PureComponent {
     //let cHeight = canvas.getHeight();
     console.log("[getCanvasAtResoution]: Overlay container new width and new height", newWidth, newHeight );
     console.log("[getCanvasAtResoution]: Canvas width and height after removing 1 px", cWidth, cHeight );
-    if (canvas && cWidth !== newWidth  && canvas.upperCanvasEl) {
+    if (canvas && canvas.upperCanvasEl && (cWidth !== newWidth || cHeight !== newHeight)) {
     //if (canvas && canvas.upperCanvasEl) {
       let isMira = this.props.from === undefined ? true : false;  
       var scaleMultiplier = newWidth / cWidth;
@@ -1145,14 +1185,15 @@ class NvisionSketchField extends PureComponent {
 
   getCanvasAtResoution = (newWidth, newHeight, scaleLandmarks = false) => {
     let canvas = this._fc;
-    let cWidth =  canvas.getWidth() - this.state.strokeWidth;
-    let cHeight = canvas.getHeight() - this.state.strokeWidth;
+    const isRoiMode = this.isRoiMode();
+    let cWidth = isRoiMode ? canvas.getWidth() : (canvas.getWidth() - this.state.strokeWidth);
+    let cHeight = isRoiMode ? canvas.getHeight() : (canvas.getHeight() - this.state.strokeWidth);
     if(this.props.resolutionHeight === 1080 && this.props.resolutionWidth === 1920){
       //cHeight = canvas.getHeight() - this.state.strokeWidth;
     }
     console.log("[Tracking Settings][Sketch Field][getCanvasAtResoution]: Overlay container new width and new height", newWidth, newHeight );
     console.log("[Tracking Settings][Sketch Field][getCanvasAtResoution]: Canvas width and height after removing 2 px", cWidth, cHeight );
-    if (canvas && cWidth !== newWidth  && canvas.upperCanvasEl) {
+    if (canvas && canvas.upperCanvasEl && (cWidth !== newWidth || cHeight !== newHeight)) {
     //if (canvas && canvas.upperCanvasEl) {
       var scaleMultiplier = newWidth / cWidth;
       var scaleHeightMultiplier = newHeight / cHeight;
@@ -1161,9 +1202,9 @@ class NvisionSketchField extends PureComponent {
         //objects[i].width = objects[i].width * scaleMultiplier;
         //objects[i].height = objects[i].height * scaleHeightMultiplier;
         objects[i].left = objects[i].left * scaleMultiplier;
-        objects[i].top = objects[i].top * scaleMultiplier;
+        objects[i].top = objects[i].top * scaleHeightMultiplier;
         objects[i].scaleX = objects[i].scaleX * scaleMultiplier;
-        objects[i].scaleY = objects[i].scaleY * scaleMultiplier;
+        objects[i].scaleY = objects[i].scaleY * scaleHeightMultiplier;
         objects[i].cnWidth = Math.round(cWidth * scaleMultiplier);
         objects[i].cnHeight = Math.round(cHeight * scaleHeightMultiplier);
         objects[i].setCoords();
@@ -1173,7 +1214,7 @@ class NvisionSketchField extends PureComponent {
       }
       this.updateObjectsInReduxAnimalTrackingKey(scaleMultiplier,scaleHeightMultiplier, cWidth, cHeight, true);
       this.updateObjectsInRedux(scaleMultiplier,scaleHeightMultiplier, cWidth, cHeight, true);
-      console.log("[Tracking Settings][Sketch Field][getCanvasAtResoution]: Canvas Dimensions after resize", cHeight * scaleMultiplier, cWidth * scaleHeightMultiplier);
+      console.log("[Tracking Settings][Sketch Field][getCanvasAtResoution]: Canvas Dimensions after resize", cHeight * scaleHeightMultiplier, cWidth * scaleMultiplier);
       canvas.discardActiveObject();
       canvas.setWidth(cWidth * scaleMultiplier);
       canvas.setHeight(cHeight * scaleHeightMultiplier);
@@ -1194,9 +1235,9 @@ class NvisionSketchField extends PureComponent {
 
   scaleObject = (object, scaleMultiplier, scaleHeightMultiplier,cWidth, cHeight, updateCanvasDimensions = false) =>{
     object.left = object.left * scaleMultiplier;
-    object.top = object.top * scaleMultiplier;
+    object.top = object.top * scaleHeightMultiplier;
     object.scaleX = object.scaleX * scaleMultiplier;
-    object.scaleY = object.scaleY * scaleMultiplier;
+    object.scaleY = object.scaleY * scaleHeightMultiplier;
     if(object.type === "ellipse") {
       let canvas = this._fc;
       let selectedObject = canvas.getObjects().find(ob => ob.defaultName === object.defaultName);
@@ -1206,7 +1247,7 @@ class NvisionSketchField extends PureComponent {
         object.centerPoint = centerPoint;
       }else{
         let centerPoint = {};
-        centerPoint = {x: object.centerPoint.x * scaleMultiplier, y: object.centerPoint.y * scaleMultiplier};
+        centerPoint = {x: object.centerPoint.x * scaleMultiplier, y: object.centerPoint.y * scaleHeightMultiplier};
         object.centerPoint = centerPoint;
       }
     }
@@ -1223,7 +1264,7 @@ class NvisionSketchField extends PureComponent {
           oCoords[key] = {
             ...object.oCoords[key],
             x: object.oCoords[key].x * scaleMultiplier,
-            y: object.oCoords[key].y * scaleMultiplier,
+            y: object.oCoords[key].y * scaleHeightMultiplier,
           };
         });
         object.oCoords = oCoords;
@@ -2063,8 +2104,9 @@ class NvisionSketchField extends PureComponent {
     // // }
     // }
 
-    // this._resize();
-    this.resizeCanvas(true);
+    // When ROI mode is active, we don't want `addDimension=true` because it adds
+    // `strokeWidth` again, turning (e.g.) 512x512 stream into 514x514 canvas.
+    this.resizeCanvas(this.isRoiMode() ? false : true);
   }
 
   updateLandmarksPosition = () => {
@@ -2263,7 +2305,7 @@ class NvisionSketchField extends PureComponent {
             : '100%'
       }
     )
-
+    console.log("[Tracking Settings][Sketch Field][render] canvasDivStyle", canvasDivStyle);
     return (
       <div
         className={className}

@@ -6,6 +6,20 @@ import { linearDistance } from "./utils";
 const fabric = require("fabric").fabric;
 const geometric = require("geometric");
 
+const getNextRoiName = (objects = []) => {
+  const used = new Set(
+    objects
+      .map((obj) => (obj && typeof obj.name === "string" ? obj.name.match(/^ROI#(\d+)$/) : null))
+      .filter(Boolean)
+      .map((match) => Number(match[1]))
+      .filter((num) => Number.isFinite(num) && num > 0)
+  );
+  for (let i = 1; i <= 5; i += 1) {
+    if (!used.has(i)) return `ROI#${i}`;
+  }
+  return `ROI#${objects.length + 1}`;
+};
+
 var svgData = '<svg xmlns="http://www.w3.org/2000/svg" class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium MuiBox-root css-uqopch" viewBox="0 0 24 24" focusable="false" aria-hidden="true" data-testid="Rotate90DegreesCwIcon"><path fill="red" d="M4.64 19.37c3.03 3.03 7.67 3.44 11.15 1.25l-1.46-1.46c-2.66 1.43-6.04 1.03-8.28-1.21-2.73-2.73-2.73-7.17 0-9.9C7.42 6.69 9.21 6.03 11 6.03V9l4-4-4-4v3.01c-2.3 0-4.61.87-6.36 2.63-3.52 3.51-3.52 9.21 0 12.73zM11 13l6 6 6-6-6-6-6 6z"></path></svg>';
 
 var rotateIcon = 'data:image/svg+xml,' + encodeURIComponent(svgData);
@@ -328,8 +342,9 @@ class Polygon extends FabricCanvasTool {
       (object) => object.id !== undefined && roiTypes.includes(object.type)
     );
     // let name = `ROI#${findIdForObject.length + 1}`;
-    let name = props.roiDefaultNames[0];
-    let defaultName = props.roiDefaultNames[0];
+    const nextRoiName = getNextRoiName(findIdForObject);
+    let name = nextRoiName;
+    let defaultName = nextRoiName;
     let points = [];
     // collect points and remove them from canvas
     for (const point of pointArray) {
@@ -355,8 +370,8 @@ class Polygon extends FabricCanvasTool {
       strokeWidth: this._width,
       stroke: '#ffa500',
       transparentCorners: false,
-      name: `ROI#${objects.length + 1}`,
-      defaultName: `ROI#${objects.length + 1}`,
+      name,
+      defaultName,
       selectable: false,
       evented: false,
       enable: true,

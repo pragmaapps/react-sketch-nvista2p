@@ -5,6 +5,20 @@ import { linearDistance } from "./utils";
 
 const fabric = require("fabric").fabric;
 
+const getNextRoiName = (objects = []) => {
+  const used = new Set(
+    objects
+      .map((obj) => (obj && typeof obj.name === "string" ? obj.name.match(/^ROI#(\d+)$/) : null))
+      .filter(Boolean)
+      .map((match) => Number(match[1]))
+      .filter((num) => Number.isFinite(num) && num > 0)
+  );
+  for (let i = 1; i <= 5; i += 1) {
+    if (!used.has(i)) return `ROI#${i}`;
+  }
+  return `ROI#${objects.length + 1}`;
+};
+
 class Ellipse extends FabricCanvasTool {
   configureCanvas(props) {
     let canvas = this._canvas;
@@ -29,9 +43,15 @@ class Ellipse extends FabricCanvasTool {
     this._canvas.off("mouse:up");
     this._canvas.on("mouse:up", (e) => this.doMouseUp(e, props, sketch));
     if (!this.isDown) return;
-    const { notificationShow, roiDefaultNames } = props;
-    let objects = this._canvas.getObjects().filter(obj => obj.id !== "trackingArea" && obj.id !== "calibratedLine");
-    if (objects.length >= 5 && roiDefaultNames.length === 0) {
+    const { notificationShow } = props;
+    let roiObjects = this._canvas.getObjects().filter((obj) =>
+      obj &&
+      obj.id !== undefined &&
+      ["rect", "ellipse", "polygon"].includes(obj.type) &&
+      obj.id !== "trackingArea" &&
+      obj.id !== "calibratedLine"
+    );
+    if (roiObjects.length >= 5) {
       notificationShow();
       console.log(
         `Maximum five shapes allowed `,
@@ -50,9 +70,16 @@ class Ellipse extends FabricCanvasTool {
     let canvas = this._canvas;
     this.isDown = true;
     let pointer = canvas.getPointer(options.e);
-    let objects = canvas.getObjects();
-    let name = props.roiDefaultNames[0];
-    let defaultName = props.roiDefaultNames[0];
+    let roiObjects = canvas.getObjects().filter((obj) =>
+      obj &&
+      obj.id !== undefined &&
+      ["rect", "ellipse", "polygon"].includes(obj.type) &&
+      obj.id !== "trackingArea" &&
+      obj.id !== "calibratedLine"
+    );
+    const nextRoiName = getNextRoiName(roiObjects);
+    let name = nextRoiName;
+    let defaultName = nextRoiName;
     [this.startX, this.startY] = [pointer.x, pointer.y];
     let boundary = props.getboudaryCoords();
     if (boundary && (pointer.y > (boundary.height * boundary.scaleY) + boundary.top || pointer.x > (boundary.width * boundary.scaleX) + boundary.left || pointer.x < boundary.left || pointer.y < boundary.top)) {
@@ -68,8 +95,8 @@ class Ellipse extends FabricCanvasTool {
       strokeWidth: this._width,
       stroke: '#ffa500',
       fill: this._fill,
-      name: `ROI#${objects.length + 1}`,
-      defaultName: `ROI#${objects.length + 1}`,
+      name,
+      defaultName,
       selectable: false,
       evented: false,
       transparentCorners: false,
