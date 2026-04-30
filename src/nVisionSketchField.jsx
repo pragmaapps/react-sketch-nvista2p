@@ -262,6 +262,16 @@ class NvisionSketchField extends PureComponent {
   currentAngle = 0;
   isRotating = false;
   cursorPos = new fabric.Point();
+  _suppressObjectRemovedEvent = false;
+
+  withSuppressedObjectRemoved = (callback) => {
+    this._suppressObjectRemovedEvent = true;
+    try {
+      return callback();
+    } finally {
+      this._suppressObjectRemovedEvent = false;
+    }
+  }
 
   _initTools = fabricCanvas => {
     this._tools = {}
@@ -314,7 +324,7 @@ class NvisionSketchField extends PureComponent {
     let canvas = this._fc
     // canvas.clear();
     // let canvas = this._fc = new fabric.Canvas("roi-canvas", { centeredRotation: true, centeredScaling: true });
-    canvas.clear()
+    this.withSuppressedObjectRemoved(() => canvas.clear())
     this._resize()
     fabric.Image.fromURL(dataUrl, oImg => {
       let widthFactor = canvas.getWidth() / oImg.width
@@ -789,10 +799,12 @@ class NvisionSketchField extends PureComponent {
     let canvas = this._fc;
     if (!canvas) return;
     let roiTypes = ["rect", "ellipse", "polygon"];
-    canvas.getObjects().forEach((shape) => {
-      if (shape && roiTypes.includes(shape.type)) {
-        canvas.remove(shape);
-      }
+    this.withSuppressedObjectRemoved(() => {
+      canvas.getObjects().forEach((shape) => {
+        if (shape && roiTypes.includes(shape.type)) {
+          canvas.remove(shape);
+        }
+      });
     });
     canvas.discardActiveObject();
     canvas.renderAll();
@@ -820,7 +832,9 @@ class NvisionSketchField extends PureComponent {
   */
   _onObjectRemoved = e => {
     const { onObjectRemoved } = this.props
+    if (this._suppressObjectRemovedEvent) return;
     let obj = e.target
+    if (!obj) return;
     if (obj.__removed) {
       obj.__version += 1
       return
@@ -1225,8 +1239,9 @@ class NvisionSketchField extends PureComponent {
       canvas.renderAll();
       canvas.calcOffset();
       this.setState({canvasHeight:canvas.height,canvasWidth:canvas.width, scaleHeightMultiplier, scaleMultiplier},()=>{
-        if (this.props.onShapeAdded) {
-          // Keep external state (e.g. redux) in sync after resize scaling.
+        // In ROI mode, auto-resize callbacks can run before shapes are reloaded,
+        // which would push empty zones to Redux.
+        if (this.props.onShapeAdded && !this.isRoiMode()) {
           this.props.onShapeAdded(false);
         }
               });
@@ -1396,8 +1411,8 @@ class NvisionSketchField extends PureComponent {
     canvas.renderAll();
     canvas.calcOffset();
     this.setState({canvasHeight:canvas.height,canvasWidth:canvas.width},()=>{
-          if (this.props.onShapeAdded) {
-            // Sync external state after component-mount scaling.
+          // In ROI mode, mount-time sync can fire before canvas is hydrated.
+          if (this.props.onShapeAdded && !this.isRoiMode()) {
             this.props.onShapeAdded(false);
           }
           });
@@ -1692,7 +1707,7 @@ class NvisionSketchField extends PureComponent {
   */
   clear = propertiesToInclude => {
     let discarded = this.toJSON(propertiesToInclude)
-    this._fc.clear()
+    this.withSuppressedObjectRemoved(() => this._fc.clear())
     // this._history.clear()
     return discarded
   }
