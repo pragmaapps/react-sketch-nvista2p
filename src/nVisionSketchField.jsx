@@ -799,13 +799,13 @@ class NvisionSketchField extends PureComponent {
     let canvas = this._fc;
     if (!canvas) return;
     let roiTypes = ["rect", "ellipse", "polygon"];
-    this.withSuppressedObjectRemoved(() => {
+    // this.withSuppressedObjectRemoved(() => {
       canvas.getObjects().forEach((shape) => {
         if (shape && roiTypes.includes(shape.type)) {
           canvas.remove(shape);
         }
       });
-    });
+    // });
     canvas.discardActiveObject();
     canvas.renderAll();
   }
@@ -2320,7 +2320,7 @@ class NvisionSketchField extends PureComponent {
             : '100%'
       }
     )
-    console.log("[Tracking Settings][Sketch Field][render] canvasDivStyle", canvasDivStyle);
+    // console.log("[Tracking Settings][Sketch Field][render] canvasDivStyle", canvasDivStyle);
     return (
       <div
         className={className}
