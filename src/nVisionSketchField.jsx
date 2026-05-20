@@ -436,7 +436,7 @@ class NvisionSketchField extends PureComponent {
         obj.width=this.width1;
         obj.height=this.height1;
       }else if(!this.props.checkForMinTotalArea(obj, "edit")){
-        console.log("%c[Animal Tracking]%c [Skecth Field] [On Object Scaling] The zone size should not be less than 100px of the total area.","color:blue; font-weight: bold;",
+        console.log("%c[ROI]%c [Skecth Field] [On Object Scaling] The ROI shape size should not be less than 15px of the total area.","color:blue; font-weight: bold;",
         "color: black;");
         obj.left = this.left1;
         obj.top=this.top1;
@@ -467,8 +467,8 @@ class NvisionSketchField extends PureComponent {
     obj.height=this.height1 === 0 ? obj.height : this.height1;
     obj.setCoords();
   }else if(!this.props.checkForMinTotalArea(obj, "edit", true)){
-    console.log("%c[Animal Tracking]%c [Skecth Field] [On Object Scaling] The tracking area should not be less than 200px width and height respectively.","color:blue; font-weight: bold;",
-    "color: black;");
+    // console.log("%c[ROI]%c [Skecth Field] [On Object Scaling] The ROI shape should not be less than 200px width and height respectively.","color:blue; font-weight: bold;",
+    // "color: black;");
     obj.left = this.left1;
     obj.top=this.top1;
     obj.scaleX=this.scale1x;
@@ -618,8 +618,8 @@ class NvisionSketchField extends PureComponent {
     var canvasTL = new fabric.Point(0, 0);
     var canvasBR = new fabric.Point(canvas.getWidth() -1, canvas.getHeight() -1);
     if (!obj.isContainedWithinRect(canvasTL, canvasBR, true, true)) {
-      console.log("%c[Animal Tracking]%c [Traking Area] Modified outside the canvas","color:blue; font-weight: bold;",
-      "color: black;",obj);
+      // console.log("%c[ROI]%c Modified outside the canvas","color:blue; font-weight: bold;",
+      // "color: black;",obj);
       var objBounds = obj.getBoundingRect();
       obj.setCoords();
       var objTL = obj.getPointByOrigin("left", "top");
@@ -637,8 +637,8 @@ class NvisionSketchField extends PureComponent {
       this._fc.renderAll();
       this.checkWithInBoundary();
     }else{
-      console.log("%c[Animal Tracking]%c [Traking Area] Modified with in canvas","color:blue; font-weight: bold;",
-      "color: black;",obj);
+      // console.log("%c[ROI]%c Modified within canvas","color:blue; font-weight: bold;",
+      // "color: black;",obj);
       this.checkWithInBoundary();
     }
     this.props.onShapeAdded();
@@ -751,7 +751,7 @@ class NvisionSketchField extends PureComponent {
         }
       }
     });   
-    showNotification && this.props.notificationShow("Zones lying outside of tracking area were removed.");   
+    showNotification && this.props.notificationShow("ROI shape lying outside of panel were removed.");   
     canvas.renderAll();
     // this.props.onShapeAdded();
   }
@@ -780,7 +780,7 @@ class NvisionSketchField extends PureComponent {
           canvas.remove(shape);
         }
     });   
-    showNotification && this.props.notificationShow("Zones lying outside of tracking area were removed.");   
+    showNotification && this.props.notificationShow("ROI shapes lying outside the ROI shape were removed.");   
     canvas.renderAll();
     this.props.onShapeAdded();
   }*/
@@ -994,7 +994,7 @@ class NvisionSketchField extends PureComponent {
     if (!overlayWidth && container.width) overlayWidth = container.width;
     if (!overlayHeight && container.height) overlayHeight = container.height;
 
-    console.log('[Tracking Setting][Tracking Area] Canvas Overlay Width:', overlayWidth, overlayHeight);
+    console.log('[ROI Settings][ROI Shape] Canvas Overlay Width:', overlayWidth, overlayHeight);
     return { overlayWidth: overlayWidth, overlayHeight: overlayHeight };
   }
 
@@ -1016,9 +1016,9 @@ class NvisionSketchField extends PureComponent {
     if(this.props.resolutionHeight === 1080 && this.props.resolutionWidth === 1920){
       //cHeight = canvas.getHeight() - this.state.strokeWidth;
     }
-    console.log("[Tracking Settings][Sketch Field][resizeZones]: Overlay container new width and new height", newWidth, newHeight );
-    console.log("[Tracking Settings][Sketch Field][resizeZones]: Canvas width and height", cWidth, cHeight );
-    console.log("[Tracking Settings][Sketch Field][resizeZones]: Canvas scaleMultiplier", scaleMultiplier, "heightmultiplier", scaleHeightMultiplier);
+    // console.log("[ROI Settings][Sketch Field][resizeZones]: Overlay container new width and new height", newWidth, newHeight );
+    // console.log("[ROI Settings][Sketch Field][resizeZones]: Canvas width and height", cWidth, cHeight );
+    // console.log("[ROI Settings][Sketch Field][resizeZones]: Canvas scaleMultiplier", scaleMultiplier, "heightmultiplier", scaleHeightMultiplier);
     if (canvas && canvas.upperCanvasEl) {
     //if (canvas && canvas.upperCanvasEl) {
       // if(!scaleMultiplier)
@@ -1027,7 +1027,7 @@ class NvisionSketchField extends PureComponent {
         scaleHeightMultiplier =  cHeight / newHeight;
         let cnwidthMultiplier = newWidth / cWidth;
         let cnHeightMultiplier = newHeight / cHeight;
-        console.log("[Tracking Settings][Sketch Field][resizeZones]: Canvas scaleMultiplier", scaleMultiplier, "hightmultiplier", scaleHeightMultiplier);
+        console.log("[ROI Settings][Sketch Field][resizeZones]: Canvas scaleMultiplier", scaleMultiplier, "hightmultiplier", scaleHeightMultiplier);
       var objects = canvas.getObjects();
       for (var i in objects) {
         //objects[i].width = objects[i].width * scaleMultiplier;
@@ -1039,12 +1039,12 @@ class NvisionSketchField extends PureComponent {
         objects[i].setCoords();
         var scaleFactor = this.state.scaleFactor * scaleMultiplier;
         // this.setState({ scaleFactor });
-        console.log("[Tracking Settings][Sketch Field][resizeZones]: object details after resizing", objects[i]);
+        console.log("[ROI Settings][Sketch Field][resizeZones]: object details after resizing", objects[i]);
       }
 
       this.updateObjectsInReduxAnimalTrackingKey(scaleMultiplier);
       this.updateObjectsInRedux(scaleMultiplier);
-      console.log("[Tracking Settings][Sketch Field][resizeZones]: Canvas Dimensions after resize", cHeight * cnwidthMultiplier, cWidth * cnHeightMultiplier);
+      console.log("[ROI Settings][Sketch Field][resizeZones]: Canvas Dimensions after resize", cHeight * cnwidthMultiplier, cWidth * cnHeightMultiplier);
       canvas.discardActiveObject();
       // canvas.setWidth(cWidth * cnwidthMultiplier);
       // canvas.setHeight(cHeight * cnHeightMultiplier);
@@ -1059,7 +1059,7 @@ class NvisionSketchField extends PureComponent {
   }
 
   resizeZonesOnImport = (newWidth, newHeight) => {
-    console.log("[Tracking Settings][Sketch Field][resizeZonesOnImport] New width",newWidth,"NewHeight", newHeight);
+    // console.log("[ROI Settings][Sketch Field][resizeZonesOnImport] New width",newWidth,"NewHeight", newHeight);
     let { scaleHeightMultiplier, scaleMultiplier } = this.state;
     let canvas = this._fc;
     //let cWidth =  canvas.getWidth() - this.state.strokeWidth;
@@ -1069,9 +1069,9 @@ class NvisionSketchField extends PureComponent {
     if(this.props.resolutionHeight === 1080 && this.props.resolutionWidth === 1920){
       //cHeight = canvas.getHeight() - this.state.strokeWidth;
     }
-    console.log("[Tracking Settings][Sketch Field][resizeZonesOnImport]: Overlay container new width and new height", newWidth, newHeight );
-    console.log("[Tracking Settings][Sketch Field][resizeZonesOnImport]: Canvas width and height", cWidth, cHeight );
-    console.log("[Tracking Settings][Sketch Field][resizeZonesOnImport]: Canvas scaleMultiplier", scaleMultiplier, "heightmultiplier", scaleHeightMultiplier);
+    // console.log("[ROI Settings][Sketch Field][resizeZonesOnImport]: Overlay container new width and new height", newWidth, newHeight );
+    // console.log("[ROI Settings][Sketch Field][resizeZonesOnImport]: Canvas width and height", cWidth, cHeight );
+    // console.log("[ROI Settings][Sketch Field][resizeZonesOnImport]: Canvas scaleMultiplier", scaleMultiplier, "heightmultiplier", scaleHeightMultiplier);
     if (canvas && canvas.upperCanvasEl) {
     //if (canvas && canvas.upperCanvasEl) {
       // if(!scaleMultiplier)
@@ -1080,7 +1080,7 @@ class NvisionSketchField extends PureComponent {
         scaleHeightMultiplier =  cHeight / newHeight;
         let cnwidthMultiplier = newWidth / cWidth;
         let cnHeightMultiplier = newHeight / cHeight;
-        console.log("[Tracking Settings][Sketch Field][resizeZonesOnImport]: Canvas scaleMultiplier", scaleMultiplier, "hightmultiplier", scaleHeightMultiplier);
+        // console.log("[ROI Settings][Sketch Field][resizeZonesOnImport]: Canvas scaleMultiplier", scaleMultiplier, "hightmultiplier", scaleHeightMultiplier);
       var objects = canvas.getObjects();
       for (var i in objects) {
         //objects[i].width = objects[i].width * scaleMultiplier;
@@ -1092,12 +1092,12 @@ class NvisionSketchField extends PureComponent {
         objects[i].setCoords();
         var scaleFactor = this.state.scaleFactor * scaleMultiplier;
         // this.setState({ scaleFactor });
-        console.log("[Tracking Settings][Sketch Field][resizeZonesOnImport]: object details after resizing", objects[i]);
+        console.log("[ROI Settings][Sketch Field][resizeZonesOnImport]: object details after resizing", objects[i]);
       }
       // this.props.onShapeAdded();
       this.updateObjectsInReduxAnimalTrackingKey(scaleMultiplier,scaleHeightMultiplier, cWidth, cHeight, true);
       this.updateObjectsInRedux(scaleMultiplier,scaleHeightMultiplier, cWidth, cHeight, true);
-      console.log("[Tracking Settings][Sketch Field][resizeZonesOnImport]: Canvas Dimensions after resize", cHeight * cnwidthMultiplier, cWidth * cnHeightMultiplier);
+      console.log("[ROI Settings][Sketch Field][resizeZonesOnImport]: Canvas Dimensions after resize", cHeight * cnwidthMultiplier, cWidth * cnHeightMultiplier);
       canvas.discardActiveObject();
       // canvas.setWidth(cWidth * cnwidthMultiplier);
       // canvas.setHeight(cHeight * cnHeightMultiplier);
@@ -1205,8 +1205,8 @@ class NvisionSketchField extends PureComponent {
     if(this.props.resolutionHeight === 1080 && this.props.resolutionWidth === 1920){
       //cHeight = canvas.getHeight() - this.state.strokeWidth;
     }
-    console.log("[Tracking Settings][Sketch Field][getCanvasAtResoution]: Overlay container new width and new height", newWidth, newHeight );
-    console.log("[Tracking Settings][Sketch Field][getCanvasAtResoution]: Canvas width and height after removing 2 px", cWidth, cHeight );
+    // console.log("[ROI Settings][Sketch Field][getCanvasAtResoution]: Overlay container new width and new height", newWidth, newHeight );
+    // console.log("[ROI Settings][Sketch Field][getCanvasAtResoution]: Canvas width and height after removing 2 px", cWidth, cHeight );
     if (canvas && canvas.upperCanvasEl && (cWidth !== newWidth || cHeight !== newHeight)) {
     //if (canvas && canvas.upperCanvasEl) {
       var scaleMultiplier = newWidth / cWidth;
@@ -1224,11 +1224,11 @@ class NvisionSketchField extends PureComponent {
         objects[i].setCoords();
         var scaleFactor = this.state.scaleFactor * scaleMultiplier;
         this.setState({ scaleFactor });
-        console.log("[Tracking Settings][Sketch Field][getCanvasAtResoution]: object details after resizing", objects[i]);
+        // console.log("[ROI Settings][Sketch Field][getCanvasAtResoution]: object details after resizing", objects[i]);
       }
       this.updateObjectsInReduxAnimalTrackingKey(scaleMultiplier,scaleHeightMultiplier, cWidth, cHeight, true);
       this.updateObjectsInRedux(scaleMultiplier,scaleHeightMultiplier, cWidth, cHeight, true);
-      console.log("[Tracking Settings][Sketch Field][getCanvasAtResoution]: Canvas Dimensions after resize", cHeight * scaleHeightMultiplier, cWidth * scaleMultiplier);
+      // console.log("[ROI Settings][Sketch Field][getCanvasAtResoution]: Canvas Dimensions after resize", cHeight * scaleHeightMultiplier, cWidth * scaleMultiplier);
       canvas.discardActiveObject();
       canvas.setWidth(cWidth * scaleMultiplier);
       canvas.setHeight(cHeight * scaleHeightMultiplier);
@@ -1401,7 +1401,7 @@ class NvisionSketchField extends PureComponent {
       zones.push(scaledObject);
     })
     this.props.updateArenaZoneShapesList(zones);*/
-    console.log("[Tracking Settings][Sketch Field][getCanvasAtComponentMount][component mount] Resize Canvas Dimensions to: ", cHeight * scaleHeightMultiplier, cWidth * scaleMultiplier);
+    console.log("[ROI Settings][Sketch Field][getCanvasAtComponentMount][component mount] Resize Canvas Dimensions to: ", cHeight * scaleHeightMultiplier, cWidth * scaleMultiplier);
     canvas.setWidth(cWidth * scaleMultiplier);
     canvas.setHeight(cHeight * scaleHeightMultiplier);
     const setCanvasHeight = this.getCanvasHeightUpdater();
@@ -1425,8 +1425,8 @@ class NvisionSketchField extends PureComponent {
   resizeCanvas = (addDimension = false, resize = true) => {
     let currCanvas = this._fc;
     let {overlayWidth, overlayHeight} = this.getOverlayDimensions();
-    console.log("[Tracking Settings][Sketch Field][resize Canvas][Current width and height of overlay container] :", overlayWidth, overlayHeight);
-    console.log("[Tracking Settings][Sketch Field][resize Canvas][Current width and height of canvas] :", currCanvas.getWidth(),currCanvas.getHeight());
+    // console.log("[ROI Settings][Sketch Field][resize Canvas][Current width and height of overlay container] :", overlayWidth, overlayHeight);
+    // console.log("[ROI Settings][Sketch Field][resize Canvas][Current width and height of canvas] :", currCanvas.getWidth(),currCanvas.getHeight());
     if(resize){
       this._resize();
     }
@@ -1443,7 +1443,7 @@ class NvisionSketchField extends PureComponent {
     const setCanvasWidth = this.getCanvasWidthUpdater();
     setCanvasHeight(currCanvas.getHeight());
     setCanvasWidth(currCanvas.getWidth());
-        console.log("[Tracking Settings][Sketch Field][resize Canvas][width and height of canvas after resize] :", currCanvas.getWidth(),currCanvas.getHeight());
+        // console.log("[ROI Settings][Sketch Field][resize Canvas][width and height of canvas after resize] :", currCanvas.getWidth(),currCanvas.getHeight());
   }
 
   setCanvasWidthHeightInRedux = () => {
@@ -1516,8 +1516,8 @@ class NvisionSketchField extends PureComponent {
     let canvas = this._fc;
     let cWidth =  canvas.getWidth() - this.state.strokeWidth;
     let cHeight = canvas.getHeight() - this.state.strokeWidth;
-    console.log("[Tracking Settings][Sketch Field][resizeReduxAndSessionObjectsOnMount]: canvas Old width and old height:", oldWidth, oldHeight);
-    console.log("[Tracking Settings][Sketch Field][resizeReduxAndSessionObjectsOnMount]: Current Canvas width and height : ", cWidth, cHeight );
+    // console.log("[ROI Settings][Sketch Field][resizeReduxAndSessionObjectsOnMount]: canvas Old width and old height:", oldWidth, oldHeight);
+    // console.log("[ROI Settings][Sketch Field][resizeReduxAndSessionObjectsOnMount]: Current Canvas width and height : ", cWidth, cHeight );
     if (canvas && oldWidth !== cWidth && canvas.upperCanvasEl) {
     //if (canvas && canvas.upperCanvasEl) {
       var scaleMultiplier = cWidth/oldWidth;
@@ -1531,8 +1531,8 @@ class NvisionSketchField extends PureComponent {
     let canvas = this._fc;
     let cWidth =  canvas.getWidth() - this.state.strokeWidth;
     let cHeight = canvas.getHeight() - this.state.strokeWidth;
-    console.log("[Tracking Settings][Sketch Field][resizeReduxAndSessionObjectsAfterPageLoad]: canvas Old width and old height:", oldWidth, oldHeight);
-    console.log("[Tracking Settings][Sketch Field][resizeReduxAndSessionObjectsAfterPageLoad]: Current Canvas width and height : ", cWidth, cHeight );
+    // console.log("[ROI Settings][Sketch Field][resizeReduxAndSessionObjectsAfterPageLoad]: canvas Old width and old height:", oldWidth, oldHeight);
+    // console.log("[ROI Settings][Sketch Field][resizeReduxAndSessionObjectsAfterPageLoad]: Current Canvas width and height : ", cWidth, cHeight );
     if (canvas && oldWidth !== cWidth && canvas.upperCanvasEl) {
     //if (canvas && canvas.upperCanvasEl) {
       var scaleMultiplier = cWidth/oldWidth;

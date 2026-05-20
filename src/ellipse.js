@@ -187,9 +187,21 @@ class Ellipse extends FabricCanvasTool {
         props.notificationShow("Zone should not be created outside tracking area.");
       }
       else if(!ellipseSmall){ 
-        console.log("%c[Animal Tracking]%c [Skecth Field][Ellipse][do mouse up] The zone size should not be less than 100px of the total area.","color:blue; font-weight: bold;",
-          "color: black;");
-        props.notificationShow("Zone size should be bigger then 100px.");
+        // If the created ellipse is smaller than minimum area, enlarge it so
+        // its displayed area is at least MIN_AREA while keeping left/top unchanged.
+        const MIN_AREA = 15;
+        const rx = this.ellipse.rx || 1;
+        const ry = this.ellipse.ry || 1;
+        const displayedArea = Math.PI * Math.max(rx, 1) * Math.max(ry, 1);
+        if (displayedArea < MIN_AREA) {
+          const factor = Math.sqrt(MIN_AREA / Math.max(displayedArea, 1));
+          this.ellipse.set({
+            rx: rx * factor,
+            ry: ry * factor
+          });
+          this.ellipse.setCoords();
+          // props.notificationShow("Zone was too small — resized to minimum area.");
+        }
       }
       else{
         isOverlap = await checkForOverlap();

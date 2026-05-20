@@ -182,9 +182,23 @@ class Rectangle extends FabricCanvasTool {
         props.notificationShow("Zone should not be created outside tracking area.");
       }
       else if(!rectSmall){ 
-        console.log("%c[Animal Tracking]%c [Skecth Field][Rectangle][do mouse up] The zone size should not be less than 100px of the total area.","color:blue; font-weight: bold;",
-          "color: black;");
-        props.notificationShow("Zone size should be bigger than 100px.");
+        // If the created rect is smaller than minimum area, enlarge it so
+        // its displayed area is at least MIN_AREA while keeping left/top unchanged.
+        const MIN_AREA = 15;
+        const baseW = this.rect.width || 1;
+        const baseH = this.rect.height || 1;
+        const sX = this.rect.scaleX || 1;
+        const sY = this.rect.scaleY || 1;
+        const displayedArea = baseW * sX * baseH * sY;
+        if (displayedArea < MIN_AREA) {
+          const factor = Math.sqrt(MIN_AREA / Math.max(displayedArea, 1));
+          this.rect.set({
+            width: baseW * factor,
+            height: baseH * factor
+          });
+          this.rect.setCoords();
+          // props.notificationShow("Zone was too small — resized to minimum area.");
+        }
       }else{
         isOverlap = await checkForOverlap();
       }
