@@ -564,12 +564,12 @@ class Polygon extends FabricCanvasTool {
 
   checkForMinDistance = (polygon, props) =>{
     const minArea = 100;
-    let totalArea = geometric.polygonArea(this.getPolygonCoords(polygon))
-    if (totalArea < minArea) {
-        if(props)
-        props.setSelected(polygon, true);
-        return false;
-    }
+    // let totalArea = geometric.polygonArea(this.getPolygonCoords(polygon))
+    // if (totalArea < minArea) {
+    //     if(props)
+    //     props.setSelected(polygon, true);
+    //     return false;
+    // }
     return true;
   }
 
