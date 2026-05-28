@@ -151,7 +151,7 @@ class Polygon extends FabricCanvasTool {
         this.objectAdd = false;
         return;
       }
-      if(options.target && this.pointArray.length === 1 && options.target.id === this.pointArray[0].id){
+      if(options.target && this.pointArray.length <= 2 && options.target.id === this.pointArray[0].id){
         return;
       }
       if (
