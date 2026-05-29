@@ -179,7 +179,7 @@ class Rectangle extends FabricCanvasTool {
       if(outsideZone){
         console.log("%c[Animal Tracking]%c [Skecth Field][Rectangle][do mouse up] Rectangle is created outside the tracking area.","color:blue; font-weight: bold;",
         "color: black;");
-        props.notificationShow("Zone should not be created outside tracking area.");
+        // props.notificationShow("Zone should not be created outside tracking area.");
       }
       else if(!rectSmall){ 
         // If the created rect is smaller than minimum area, enlarge it so

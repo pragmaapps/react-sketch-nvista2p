@@ -2307,7 +2307,9 @@ class NvisionSketchField extends PureComponent {
     let canvasDivStyle = Object.assign(
       {},
       style ? style : {},
-      width ? { width: '100%' } : { width: '100%' },
+      width !== undefined && width !== null
+        ? { width: typeof width === 'number' ? `${width}px` : width }
+        : { width: '100%' },
       //width ? { width: this.state.canvasWidth } : { width: this.state.canvasWidth },
       // Important: don't lock container height to internal canvasHeight.
       // Otherwise parent panel resize won't affect overlay dimensions.

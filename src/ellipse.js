@@ -184,7 +184,7 @@ class Ellipse extends FabricCanvasTool {
       if(outsideZone){
         console.log("%c[Animal Tracking]%c [Skecth Field][Rectangle][do mouse up] Ellipse is created outside the tracking area.","color:blue; font-weight: bold;",
         "color: black;");
-        props.notificationShow("Zone should not be created outside tracking area.");
+        // props.notificationShow("Zone should not be created outside tracking area.");
       }
       else if(!ellipseSmall){ 
         // If the created ellipse is smaller than minimum area, enlarge it so
